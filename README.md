@@ -24,4 +24,4 @@ node server.js         # 默认 8787
 - OpenAI 兼容：`LLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4`
 - Anthropic 兼容（GLM 编码套餐）：`LLM_BASE_URL=https://open.bigmodel.cn/api/anthropic`
 
-线上实例：https://www.agentloop.top/sense/
+线上实例：https://www.agentloop.top:8800/sense/
