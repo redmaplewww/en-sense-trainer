@@ -85,7 +85,7 @@ function proxyLLM(req, res, body, user){
     const sys = (body.messages||[]).filter(m=>m.role==="system").map(m=>m.content).join("\n");
     payload = JSON.stringify({
       model: CFG.model,
-      max_tokens: body.max_tokens || 2048,
+      max_tokens: body.max_tokens || +(process.env.LLM_MAX_TOKENS || 8192),
       temperature: body.temperature ?? 0.3,
       ...(sys ? {system: sys} : {}),
       messages: (body.messages||[]).filter(m=>m.role!=="system"),

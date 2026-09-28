@@ -466,7 +466,46 @@ function extractJSON(text){
   // 容错：剥掉 markdown 代码围栏、找第一个 { 到最后一个 }
   let t = text.trim().replace(/^```(json)?/,"").replace(/```$/,"").trim();
   const a = t.indexOf("{"), b = t.lastIndexOf("}");
-  if(a >= 0 && b > a) t = t.slice(a, b+1);
+  if(a >= 0 && b > a){
+    try{ return JSON.parse(t.slice(a, b+1)); }catch(e){}
+  }
+  // 截断修复：闭合未完成的字符串/括号，多候选截断点逐个尝试（输出被截断时兜底）
+  const s = a >= 0 ? t.slice(a) : t;
+  if(s.length){
+    // 第一步：闭合悬空字符串
+    let inStr = false, esc = false;
+    for(let i = 0; i < s.length; i++){
+      const c = s[i];
+      if(inStr){ if(esc) esc=false; else if(c==="\\") esc=true; else if(c==='"') inStr=false; }
+      else if(c === '"') inStr = true;
+    }
+    const closed = inStr ? s + '"' : s;
+    // 第二步：从"闭合串末尾、以及末尾往前的每个逗号/花括号边界"生成候选，补全括号试解析
+    const cuts = [closed.length];
+    for(let i = closed.length - 1; i >= Math.max(0, closed.length - 400); i--){
+      const c = closed[i];
+      if(c === "," || c === "{" || c === "[") cuts.push(i);
+    }
+    for(const cutLen of cuts){
+      let cand = closed.slice(0, cutLen);
+      cand = cand.replace(/[,\s]+$/, "");                 // 悬空逗号
+      cand = cand.replace(/"[^"]*"\s*:\s*$/, "");         // 悬空键名
+      cand = cand.replace(/[,\s]+$/, "");
+      // 统计括号栈并补全
+      const st = []; inStr = false; esc = false;
+      for(let i = 0; i < cand.length; i++){
+        const c = cand[i];
+        if(inStr){ if(esc) esc=false; else if(c==="\\") esc=true; else if(c==='"') inStr=false; continue; }
+        if(c === '"') inStr = true;
+        else if(c === "{") st.push("}");
+        else if(c === "[") st.push("]");
+        else if(c === "}" || c === "]") st.pop();
+      }
+      let full = cand;
+      while(st.length) full += st.pop();
+      try{ return JSON.parse(full); }catch(e){ /* 下一个候选 */ }
+    }
+  }
   return JSON.parse(t);
 }
 function loading(el, text="思考中…"){ el.innerHTML = `<div class="loading"><div class="spinner"></div>${esc(text)}</div>`; }
