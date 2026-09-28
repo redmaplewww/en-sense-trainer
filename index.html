@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>英语语感训练器 · 从中文思维到英文输出</title>
+<style>
+  :root{
+    --bg:#f5f6fa; --bg2:#ffffff; --bg3:#f0f2f7; --border:#e2e6ef;
+    --text:#22293a; --text2:#5b6478; --text3:#8a93a8;
+    --accent:#3b6ef5; --accent2:#2a5ae0;
+    --ok:#2e9e5b; --warn:#c98a1b; --err:#d64545;
+    --c0:#3b6ef5; --c1:#9a4fd8; --c2:#1f9e83; --c3:#d97a2e; --c4:#d24d8f; --c5:#3a8fc7;
+    --shadow:0 1px 3px rgba(30,40,70,.06), 0 4px 14px rgba(30,40,70,.05);
+    --radius:12px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    font-size:15px; line-height:1.6; min-height:100vh;
+  }
+  #app{display:flex; min-height:100vh}
+  /* ---------- 侧栏 ---------- */
+  #sidebar{
+    width:250px; background:var(--bg2); border-right:1px solid var(--border);
+    padding:18px 14px; flex-shrink:0; display:flex; flex-direction:column; gap:14px;
+  }
+  .logo{font-size:17px; font-weight:700; letter-spacing:.5px}
+  .logo small{display:block; font-size:11px; color:var(--text3); font-weight:400; margin-top:2px}
+  .side-block{background:var(--bg2); border-radius:var(--radius); padding:12px; border:1px solid var(--border); box-shadow:var(--shadow)}
+  .side-block h4{font-size:12px; color:var(--text3); margin-bottom:8px; font-weight:600; text-transform:uppercase; letter-spacing:.5px}
+  .stat-row{display:flex; justify-content:space-between; font-size:13px; padding:3px 0; color:var(--text2)}
+  .stat-row b{color:var(--text)}
+  .btn{
+    display:inline-block; background:var(--accent); color:#fff; border:none; cursor:pointer;
+    padding:8px 16px; border-radius:8px; font-size:14px; transition:.15s; box-shadow:0 1px 2px rgba(59,110,245,.3);
+  }
+  .btn:hover{background:var(--accent2)}
+  .btn.ghost{background:transparent; border:1px solid var(--border); color:var(--text2)}
+  .btn.ghost:hover{border-color:var(--accent); color:var(--accent)}
+  .btn.small{padding:4px 10px; font-size:12px}
+  .btn.block{width:100%; text-align:center}
+  .pattern-item{
+    padding:6px 8px; border-radius:6px; font-size:13px; cursor:pointer; color:var(--text2);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .pattern-item:hover{background:var(--bg2); color:var(--text)}
+  .pattern-item .cnt{font-size:11px; color:var(--text3); background:var(--bg2); border-radius:10px; padding:0 7px}
+  /* ---------- 主区 ---------- */
+  #main{flex:1; display:flex; flex-direction:column; min-width:0}
+  #tabs{display:flex; gap:2px; padding:12px 20px 0; border-bottom:1px solid var(--border); flex-wrap:wrap}
+  .tab{
+    padding:9px 16px; cursor:pointer; color:var(--text3); font-size:14px; border-radius:8px 8px 0 0;
+    border:1px solid transparent; border-bottom:none; user-select:none; white-space:nowrap;
+  }
+  .tab:hover{color:var(--text2)}
+  .tab.active{color:var(--accent); background:var(--bg2); border-color:var(--border)}
+  .tab small{display:block; font-size:10px; color:inherit; opacity:.6}
+  #content{padding:22px; flex:1; overflow-y:auto; max-width:920px}
+  .panel{display:none}
+  .panel.active{display:block}
+  h2.panel-title{font-size:19px; margin-bottom:4px}
+  .panel-desc{color:var(--text2); font-size:13px; margin-bottom:18px}
+  .panel-desc em{color:var(--accent); font-style:normal}
+  /* ---------- 输入区 ---------- */
+  .input-card{background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px; box-shadow:var(--shadow)}
+  textarea{
+    width:100%; background:var(--bg); color:var(--text); border:1px solid var(--border);
+    border-radius:8px; padding:10px 12px; font-size:15px; font-family:inherit; resize:vertical; min-height:64px;
+  }
+  textarea:focus,input:focus,select:focus{outline:none; border-color:var(--accent)}
+  .hint{font-size:12px; color:var(--text3); margin-top:6px}
+  .examples{margin-top:8px; display:flex; gap:6px; flex-wrap:wrap}
+  .example-chip{font-size:12px; color:var(--text3); border:1px dashed var(--border); border-radius:20px; padding:2px 10px; cursor:pointer}
+  .example-chip:hover{color:var(--accent); border-color:var(--accent)}
+  /* ---------- 结果卡片 ---------- */
+  .card{background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:14px; box-shadow:var(--shadow)}
+  .card h3{font-size:14px; color:var(--accent); margin-bottom:10px; font-weight:600}
+  .pattern-tag{
+    display:inline-block; background:linear-gradient(135deg,#eef3ff,#e3ebff); border:1px solid #c9d8ff;
+    border-radius:8px; padding:6px 12px; font-size:14px; margin-bottom:10px; color:var(--accent); font-weight:600;
+  }
+  .pattern-note{font-size:13px; color:var(--warn); margin-bottom:14px; padding:8px 12px; background:rgba(224,166,60,.08); border-radius:8px}
+  .chunks{display:flex; flex-direction:column; gap:6px}
+  .chunk-pair{display:grid; grid-template-columns:1fr 1fr; gap:0; border-radius:8px; overflow:hidden}
+  .chunk-zh,.chunk-en{padding:8px 12px; font-size:14px}
+  .chunk-zh{background:var(--bg3); border-right:1px dashed var(--border)}
+  .chunk-en{font-weight:600}
+  .chunk-role{font-size:11px; color:var(--text3); display:block; font-weight:400}
+  .chunk-pair[data-c="0"] .chunk-en{color:var(--c0)} .chunk-pair[data-c="1"] .chunk-en{color:var(--c1)}
+  .chunk-pair[data-c="2"] .chunk-en{color:var(--c2)} .chunk-pair[data-c="3"] .chunk-en{color:var(--c3)}
+  .chunk-pair[data-c="4"] .chunk-en{color:var(--c4)} .chunk-pair[data-c="5"] .chunk-en{color:var(--c5)}
+  .chunk-pair[data-c="0"] .chunk-zh{box-shadow:inset 3px 0 0 var(--c0)} .chunk-pair[data-c="1"] .chunk-zh{box-shadow:inset 3px 0 0 var(--c1)}
+  .chunk-pair[data-c="2"] .chunk-zh{box-shadow:inset 3px 0 0 var(--c2)} .chunk-pair[data-c="3"] .chunk-zh{box-shadow:inset 3px 0 0 var(--c3)}
+  .chunk-pair[data-c="4"] .chunk-zh{box-shadow:inset 3px 0 0 var(--c4)} .chunk-pair[data-c="5"] .chunk-zh{box-shadow:inset 3px 0 0 var(--c5)}
+  .trans-final{font-size:16px; padding:10px 12px; background:rgba(91,140,255,.08); border-left:3px solid var(--accent); border-radius:6px; margin-bottom:8px}
+  .alt-line{font-size:14px; color:var(--text2); margin-bottom:8px}
+  .alt-line b{color:var(--c2)}
+  .tip-list{list-style:none}
+  .tip-list li{font-size:13px; color:var(--text2); padding:4px 0 4px 20px; position:relative}
+  .tip-list li::before{content:"⚡"; position:absolute; left:0; font-size:11px}
+  /* ---------- 批改 ---------- */
+  .verdict{font-size:15px; padding:8px 12px; border-radius:8px; margin-bottom:12px}
+  .verdict.good{background:rgba(63,185,111,.12); color:var(--ok)}
+  .verdict.mid{background:rgba(224,166,60,.12); color:var(--warn)}
+  .verdict.bad{background:rgba(224,92,92,.12); color:var(--err)}
+  .corr{display:flex; gap:10px; padding:8px 10px; border-radius:8px; margin-bottom:6px; font-size:14px; align-items:flex-start}
+  .corr .mark{font-weight:700; flex-shrink:0; width:22px; text-align:center}
+  .corr.good{background:rgba(63,185,111,.07)} .corr.good .mark{color:var(--ok)}
+  .corr.warn{background:rgba(224,166,60,.07)} .corr.warn .mark{color:var(--warn)}
+  .corr.err{background:rgba(224,92,92,.07)} .corr.err .mark{color:var(--err)}
+  .corr .why{font-size:12px; color:var(--text3); display:block}
+  .err-cat{display:inline-block; font-size:11px; border-radius:4px; padding:0 6px; background:rgba(224,92,92,.15); color:#f08c8c; margin-top:2px}
+  .two-col{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px}
+  .two-col>div{background:var(--bg); border-radius:8px; padding:10px; font-size:14px}
+  .two-col .lbl{font-size:11px; color:var(--text3); margin-bottom:4px; text-transform:uppercase}
+  /* ---------- 挖空 ---------- */
+  .cloze-sentence{font-size:18px; line-height:2.4; background:var(--bg2); border-radius:8px; padding:16px; margin-bottom:14px}
+  .blank{
+    display:inline-block; min-width:70px; border-bottom:2px solid var(--accent); background:rgba(91,140,255,.06);
+    border-radius:4px 4px 0 0; padding:0 6px; margin:0 2px; font-family:inherit; font-size:16px; color:var(--accent);
+    width:110px; text-align:center;
+  }
+  .blank.ok{border-color:var(--ok); color:var(--ok)}
+  .blank.err{border-color:var(--err); color:var(--err)}
+  .level-badge{display:inline-block; font-size:11px; border-radius:4px; padding:1px 8px; margin-left:8px; vertical-align:middle}
+  .lv-a{background:rgba(91,140,255,.15); color:var(--accent)}
+  .lv-b{background:rgba(224,166,60,.15); color:var(--warn)}
+  .lv-c{background:rgba(224,92,92,.15); color:var(--err)}
+  .level-progress{display:flex; gap:8px; margin-bottom:16px; align-items:center; font-size:13px; color:var(--text3)}
+  .level-dot{width:28px; height:28px; border-radius:50%; background:var(--bg3); display:flex; align-items:center; justify-content:center; font-size:13px; border:1px solid var(--border)}
+  .level-dot.done{background:rgba(63,185,111,.2); border-color:var(--ok); color:var(--ok)}
+  .level-dot.cur{border-color:var(--accent); color:var(--accent)}
+  /* ---------- 弱点画像 ---------- */
+  .weak-bar{margin-bottom:12px}
+  .weak-bar .lbl{display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px}
+  .weak-bar .track{height:10px; background:var(--bg3); border-radius:6px; overflow:hidden}
+  .weak-bar .fill{height:100%; border-radius:6px; background:linear-gradient(90deg,var(--err),var(--warn)); transition:width .5s}
+  .weak-bar .lbl span:last-child{color:var(--warn)}
+  /* ---------- 场景 ---------- */
+  .scene-option{background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:12px; cursor:pointer; margin-bottom:8px; transition:.15s}
+  .scene-option:hover{border-color:var(--accent)}
+  .scene-option.picked{border-color:var(--accent); background:rgba(91,140,255,.08)}
+  .scene-option .pat{font-weight:600; color:var(--accent); font-size:14px}
+  .scene-option .ex{font-size:13px; color:var(--text2); font-style:italic}
+  /* ---------- 句内标注句 ---------- */
+  .anno-sentence{font-size:20px; line-height:2.6; display:flex; flex-wrap:wrap; gap:2px 6px; align-items:flex-end; padding:6px 0}
+  .seg{display:inline-flex; flex-direction:column; align-items:center; border-radius:6px; padding:2px 5px}
+  .seg .gloss{font-size:12px; color:var(--text3); font-family:"PingFang SC","Microsoft YaHei",sans-serif; line-height:1.3; margin-bottom:2px}
+  .seg .txt{font-weight:600}
+  .seg.r-0{background:rgba(91,140,255,.12)} .seg.r-0 .txt{color:var(--c0)}
+  .seg.r-1{background:rgba(176,108,224,.12)} .seg.r-1 .txt{color:var(--c1)}
+  .seg.r-2{background:rgba(63,185,160,.12)} .seg.r-2 .txt{color:var(--c2)}
+  .seg.r-3{background:rgba(224,140,76,.12)} .seg.r-3 .txt{color:var(--c3)}
+  .seg.r-4{background:rgba(208,92,156,.12)} .seg.r-4 .txt{color:var(--c4)}
+  .seg.r-5{background:rgba(108,176,224,.12)} .seg.r-5 .txt{color:var(--c5)}
+  .role-legend{display:flex; gap:10px; flex-wrap:wrap; font-size:12px; color:var(--text3); margin-bottom:8px}
+  .role-legend .dot{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:-1px}
+  details.breakdown{background:var(--bg); border-radius:8px; padding:10px 14px; margin-top:12px}
+  details.breakdown summary{cursor:pointer; font-size:13px; color:var(--accent); user-select:none}
+  details.breakdown[open] summary{margin-bottom:12px}
+  .cursor-blink::after{content:"▍"; color:var(--accent); animation:blink 1s step-end infinite}
+  @keyframes blink{50%{opacity:0}}
+  /* ---------- 通用 ---------- */
+  .loading{display:flex; align-items:center; gap:10px; color:var(--text3); font-size:14px; padding:20px 0}
+  .spinner{width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .error-msg{background:rgba(224,92,92,.1); border:1px solid rgba(224,92,92,.3); color:var(--err); border-radius:8px; padding:10px 14px; font-size:13px; margin-bottom:14px}
+  .empty{color:var(--text3); font-size:14px; text-align:center; padding:36px 0}
+  .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+  .divider{height:1px; background:var(--border); margin:14px 0}
+  dialog{
+    background:var(--bg2); color:var(--text); border:1px solid var(--border); border-radius:var(--radius);
+    padding:20px; width:min(440px,90vw);
+  }
+  dialog::backdrop{background:rgba(0,0,0,.6)}
+  dialog label{display:block; font-size:13px; color:var(--text2); margin:10px 0 4px}
+  dialog input{
+    width:100%; background:var(--bg); color:var(--text); border:1px solid var(--border);
+    border-radius:6px; padding:7px 10px; font-size:14px;
+  }
+  .srs-badge{font-size:11px; border-radius:4px; padding:0 6px}
+  .srs-new{background:rgba(91,140,255,.15); color:var(--accent)}
+  .srs-due{background:rgba(224,166,60,.15); color:var(--warn)}
+  .srs-ok{background:rgba(63,185,111,.15); color:var(--ok)}
+  .sent-item{background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:10px 14px; margin-bottom:8px; font-size:14px}
+  .sent-item .zh{color:var(--text2)}
+  .sent-item .en{color:var(--text); margin-top:2px}
+  .sent-item .meta{display:flex; gap:8px; margin-top:6px; align-items:center}
+  @media(max-width:860px){
+    #app{flex-direction:column}
+    #sidebar{width:100%; flex-direction:row; flex-wrap:wrap; align-items:flex-start}
+    .side-block{flex:1; min-width:200px}
+    .two-col{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- ============ 侧栏 ============ -->
+  <aside id="sidebar">
+    <div class="logo">英语语感训练器<small>从中文思维 → 英文输出</small></div>
+    <div class="side-block" id="statsBlock">
+      <h4>我的数据</h4>
+      <div class="stat-row"><span>累计句式</span><b id="stTotal">0</b></div>
+      <div class="stat-row"><span>今日待复习</span><b id="stDue">0</b></div>
+      <div class="stat-row"><span>已掌握</span><b id="stMastered">0</b></div>
+      <div class="stat-row"><span>批改总次数</span><b id="stGraded">0</b></div>
+    </div>
+    <div class="side-block">
+      <h4>间隔复习</h4>
+      <button class="btn block" id="btnReview">开始今日复习（<span id="revCnt">0</span>）</button>
+      <div class="hint" style="margin-top:8px">默写通过 → 间隔递增<br>写错 → 从头再来</div>
+    </div>
+    <div class="side-block" style="flex:1; overflow-y:auto; max-height:340px">
+      <h4>句式卡片库</h4>
+      <div id="patternList"><div class="empty" style="padding:10px 0">练过的句式会归到这里</div></div>
+    </div>
+    <div class="row" style="justify-content:space-between">
+      <span class="hint" id="curUser"></span>
+      <button class="btn ghost small" id="btnLogout">退出</button>
+    </div>
+    <div class="row">
+      <button class="btn ghost small" id="btnExport">导出</button>
+      <button class="btn ghost small" id="btnImport">导入</button>
+    </div>
+  </aside>
+
+  <!-- ============ 主区 ============ -->
+  <main id="main">
+    <nav id="tabs">
+      <div class="tab active" data-p="p0">AI 跟写<small>边写边出英文</small></div>
+      <div class="tab" data-p="p1">句式解剖<small>看懂英文怎么组装</small></div>
+      <div class="tab" data-p="p2">先写后看<small>自己写 → 逐块批改</small></div>
+      <div class="tab" data-p="p3">渐进挖空<small>填空 → 骨架 → 裸写</small></div>
+      <div class="tab" data-p="p4">回译循环<small>英→中→英 校准</small></div>
+      <div class="tab" data-p="p5">弱点画像<small>中式思维纠偏</small></div>
+      <div class="tab" data-p="p6">场景造句<small>自由表达</small></div>
+    </nav>
+
+    <div id="content">
+      <!-- ===== 模块0 AI跟写 ===== -->
+      <section class="panel active" id="p0">
+        <h2 class="panel-title">AI 跟写</h2>
+        <div class="panel-desc">左边写中文，右边英文<em>跟着你无缝流式输出</em>。先建立"英文就在嘴边"的手感，觉得顺了就送进「句式解剖」细看。</div>
+        <div class="input-card">
+          <textarea id="inZh0" placeholder="开始写中文，英文会跟着出现…（停顿一下即触发）" style="min-height:100px"></textarea>
+          <div class="row" style="margin-top:10px">
+            <button class="btn ghost small" id="clear0">清空</button>
+            <button class="btn small" id="send0">送入句式解剖 →</button>
+            <span class="hint" id="st0"></span>
+          </div>
+        </div>
+        <div class="card" id="liveCard" style="display:none">
+          <h3>✍️ AI 跟写输出</h3>
+          <div id="liveEn" style="font-size:18px; line-height:1.8; min-height:32px; white-space:pre-wrap"></div>
+          <div class="hint" style="margin-top:8px" id="liveHint"></div>
+        </div>
+        <div id="dissect0"></div>
+      </section>
+
+      <!-- ===== 模块1 句式解剖 ===== -->
+      <section class="panel" id="p1">
+        <h2 class="panel-title">句式对照解剖</h2>
+        <div class="panel-desc">输入中文 → 看<em>逐块对照</em>理解英文的组装顺序和思维差异。这是素材的入口，练完的句子自动进入挖空与复习。</div>
+        <div class="input-card">
+          <textarea id="inZh1" placeholder="输入一句中文，例如：我越想越觉得这个决定不对。"></textarea>
+          <div class="row" style="margin-top:10px">
+            <button class="btn" id="go1">解剖句式</button>
+            <span class="hint">支持整句，不要太长</span>
+          </div>
+          <div class="examples" id="ex1"></div>
+        </div>
+        <div id="out1"></div>
+      </section>
+
+      <!-- ===== 模块2 先写后看 ===== -->
+      <section class="panel" id="p2">
+        <h2 class="panel-title">先写后看</h2>
+        <div class="panel-desc">先自己写英文，再看参考并接受<em>逐块批改</em>。错误会被归因到思维习惯（不是纠单词，是纠语感）。</div>
+        <div class="input-card">
+          <textarea id="inZh2" placeholder="第一步：输入中文原句"></textarea>
+          <div class="row" style="margin-top:10px">
+            <button class="btn" id="step2a">下一步：我来写英文</button>
+          </div>
+        </div>
+        <div class="input-card" id="writeBox2" style="display:none">
+          <label class="hint" style="margin-bottom:6px;display:block">第二步：不看任何提示，先写出你的英文版本</label>
+          <textarea id="inEn2" placeholder="Write your English here..."></textarea>
+          <div class="row" style="margin-top:10px">
+            <button class="btn" id="step2b">提交批改</button>
+          </div>
+        </div>
+        <div id="out2"></div>
+      </section>
+
+      <!-- ===== 模块3 渐进挖空 ===== -->
+      <section class="panel" id="p3">
+        <h2 class="panel-title">渐进挖空</h2>
+        <div class="panel-desc">同一句三层难度，逐步撤掉拐杖：<em>A 填空（只填结构词）→ B 骨架首字母 → C 裸句默写</em>。专练句式感。</div>
+        <div class="row" style="margin-bottom:16px">
+          <button class="btn" id="btn3new">抽一句开始训练</button>
+          <span class="hint" id="p3poolInfo"></span>
+        </div>
+        <div id="out3"><div class="empty">先在「句式解剖」或「先写后看」里练几个句子，它们会进入这里的题库。</div></div>
+      </section>
+
+      <!-- ===== 模块4 回译 ===== -->
+      <section class="panel" id="p4">
+        <h2 class="panel-title">回译循环</h2>
+        <div class="panel-desc">参考译文被变回自然的中文，你再<em>从这个中文重新译回英文</em>。两次输出对不上的地方，就是"自以为会了"的薄弱点。</div>
+        <div class="row" style="margin-bottom:16px">
+          <button class="btn" id="btn4new">抽一句开始回译</button>
+        </div>
+        <div id="out4"><div class="empty">题库来自你练过的句子。</div></div>
+      </section>
+
+      <!-- ===== 模块5 弱点画像 ===== -->
+      <section class="panel" id="p5">
+        <h2 class="panel-title">中式思维弱点画像</h2>
+        <div class="panel-desc">所有批改错误按思维习惯自动归类。看清楚自己<em>到底栽在哪类思维</em>，然后定向出题靶向训练。</div>
+        <div id="out5"></div>
+        <div class="row" style="margin-top:6px">
+          <button class="btn" id="btn5drill">针对我最弱的类别，生成陷阱练习句</button>
+        </div>
+        <div id="out5d" style="margin-top:16px"></div>
+      </section>
+
+      <!-- ===== 模块6 场景造句 ===== -->
+      <section class="panel" id="p6">
+        <h2 class="panel-title">场景造句</h2>
+        <div class="panel-desc">语感的终点：没有中文原句，让<em>英文句式直接从脑子里长出来</em>。选一个场景，挑一种句式，自己造句。</div>
+        <div class="input-card">
+          <input id="inScene" style="width:100%; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:9px 12px; font-size:14px" placeholder="描述一个日常场景，如：委婉拒绝同事的加班请求 / 跟朋友吐槽堵车">
+          <div class="row" style="margin-top:10px">
+            <button class="btn" id="go6">给我句式选项</button>
+          </div>
+          <div class="examples" id="ex6"></div>
+        </div>
+        <div id="out6"></div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- 设置弹窗已移除：API 配置在服务端，Key 不会下发到浏览器 -->
+
+
+<dialog id="dlgReview">
+  <h3 style="margin-bottom:6px">今日复习</h3>
+  <div id="reviewBody"></div>
+</dialog>
+
+<input type="file" id="fileImport" accept=".json" style="display:none">
+
+<!-- 登录/注册 -->
+<dialog id="dlgAuth" style="text-align:center">
+  <h3 style="margin-bottom:4px">英语语感训练器</h3>
+  <p class="hint" style="margin-bottom:14px">登录后练习数据按账号保存在服务端，换设备不丢</p>
+  <input id="authUser" placeholder="用户名（2-20位）" style="width:100%; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:8px 10px; font-size:14px; margin-bottom:8px">
+  <input id="authPass" type="password" placeholder="密码（至少6位）" style="width:100%; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:8px 10px; font-size:14px">
+  <div class="error-msg" id="authErr" style="display:none; margin-top:10px"></div>
+  <div class="row" style="margin-top:14px; justify-content:center">
+    <button class="btn" id="authLogin">登录</button>
+    <button class="btn ghost" id="authReg">注册新账号</button>
+  </div>
+</dialog>
+
+<script>
+"use strict";
+/* ==================== 数据层（服务端按账号存储） ==================== */
+const TOKEN_KEY = "enSense.token";
+let S = {sentences:[], errors:{}, graded:0, drills:[]};
+let saveTimer = null;
+function save(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async ()=>{
+    const t = localStorage.getItem(TOKEN_KEY);
+    if(!t) return;
+    try{
+      const r = await fetch("api/data", {method:"PUT",
+        headers:{"Content-Type":"application/json","Authorization":"Bearer "+t},
+        body: JSON.stringify(S)});
+      if(r.status === 401) showLogin();
+    }catch(e){}
+  }, 600);
+}
+async function loadRemote(){
+  const t = localStorage.getItem(TOKEN_KEY);
+  if(!t){ showLogin(); return false; }
+  try{
+    const r = await fetch("api/data", {headers:{"Authorization":"Bearer "+t}});
+    if(r.status === 401){ localStorage.removeItem(TOKEN_KEY); showLogin(); return false; }
+    const d = await r.json();
+    S = Object.assign({sentences:[], errors:{}, graded:0, drills:[]}, d);
+    return true;
+  }catch(e){ showLogin("连接服务器失败，请刷新重试"); return false; }
+}
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const esc = s => (s||"").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const todayStr = () => new Date().toISOString().slice(0,10);
+
+/* SM-lite 间隔序列 */
+const SRS_STEPS = [1,3,7,16,35,70];
+function srsUpdate(sent, pass){
+  if(pass){
+    sent.reps = (sent.reps||0)+1;
+    const i = Math.min(sent.reps, SRS_STEPS.length-1);
+    sent.due = addDays(todayStr(), SRS_STEPS[i-1] !== undefined ? SRS_STEPS[sent.reps-1] : 70);
+    sent.interval = SRS_STEPS[Math.min(sent.reps-1, SRS_STEPS.length-1)];
+  }else{
+    sent.reps = 0; sent.due = addDays(todayStr(), 1); sent.interval = 1;
+  }
+  save();
+}
+function addDays(dateStr, n){ const d = new Date(dateStr+"T00:00:00"); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+const isDue = s => s.due <= todayStr();
+
+/* ==================== LLM 封装（经服务端代理，Key 不落地浏览器） ==================== */
+async function callLLM(system, user, onDelta, signal){
+  const stream = typeof onDelta === "function";
+  const t = localStorage.getItem(TOKEN_KEY);
+  const resp = await fetch("api/llm", {
+    method:"POST", signal,
+    headers:{"Content-Type":"application/json", ...(t?{"Authorization":"Bearer "+t}:{})},
+    body: JSON.stringify({
+      stream, temperature: stream ? 0.4 : 0.3,
+      messages:[{role:"system",content:system},{role:"user",content:user}]
+    })
+  });
+  if(!resp.ok){
+    const t = await resp.text().catch(()=> "");
+    let msg = t.slice(0,200);
+    try{ msg = JSON.parse(t).error || msg; }catch(e){}
+    throw new Error("服务错误 "+resp.status+": "+msg);
+  }
+  if(!stream){
+    const data = await resp.json();
+    return extractJSON(data.choices?.[0]?.message?.content || "");
+  }
+  // 流式 SSE
+  const reader = resp.body.getReader();
+  const dec = new TextDecoder();
+  let buf = "", full = "";
+  while(true){
+    const {done, value} = await reader.read();
+    if(done) break;
+    buf += dec.decode(value, {stream:true});
+    const lines = buf.split("\n"); buf = lines.pop();
+    for(const line of lines){
+      const s = line.trim();
+      if(!s.startsWith("data:")) continue;
+      const payload = s.slice(5).trim();
+      if(payload === "[DONE]") continue;
+      try{
+        const j = JSON.parse(payload);
+        const delta = j.choices?.[0]?.delta?.content || "";
+        if(delta){ full += delta; onDelta(delta, full); }
+      }catch(e){}
+    }
+  }
+  return full;
+}
+function extractJSON(text){
+  // 容错：剥掉 markdown 代码围栏、找第一个 { 到最后一个 }
+  let t = text.trim().replace(/^```(json)?/,"").replace(/```$/,"").trim();
+  const a = t.indexOf("{"), b = t.lastIndexOf("}");
+  if(a >= 0 && b > a) t = t.slice(a, b+1);
+  return JSON.parse(t);
+}
+function loading(el, text="思考中…"){ el.innerHTML = `<div class="loading"><div class="spinner"></div>${esc(text)}</div>`; }
+function errBox(el, e){ el.innerHTML = `<div class="error-msg">⚠ ${esc(e.message||String(e))}</div>`; }
+
+/* 流式请求（callLLM 的流式形态） */
+async function streamLLM(system, user, onDelta, signal){
+  return callLLM(system, user, onDelta, signal);
+}
+
+/* ==================== 通用渲染 ==================== */
+function renderChunks(chunks){
+  const colors = ["0","1","2","3","4","5"];
+  return `<div class="chunks">` + chunks.map((c,i)=>`
+    <div class="chunk-pair" data-c="${colors[i%6]}">
+      <div class="chunk-zh">${esc(c.zh)}<span class="chunk-role">${esc(c.role||"")}</span></div>
+      <div class="chunk-en">${esc(c.en)}</div>
+    </div>`).join("") + `</div>`;
+}
+function addToLibrary(d, zh){
+  // d: LLM 解析结果。按 zh 去重合并
+  const exist = S.sentences.find(s => s.zh === zh);
+  const rec = exist || {id:uid(), zh, createdAt:todayStr(), reps:0, due:addDays(todayStr(),1), interval:1, level:0};
+  Object.assign(rec, {en:d.translation, alt:d.alternative||"", pattern:d.pattern||"未分类", patternNote:d.patternNote||"", chunks:d.chunks||[], segments:d.segments||[], tips:d.tips||[]});
+  if(!exist) S.sentences.push(rec);
+  save(); refreshSidebar();
+  return rec;
+}
+function refreshSidebar(){
+  document.getElementById("stTotal").textContent = S.sentences.length;
+  const due = S.sentences.filter(isDue).length;
+  document.getElementById("stDue").textContent = due;
+  document.getElementById("revCnt").textContent = due;
+  const mastered = S.sentences.filter(s=>(s.reps||0)>=4).length;
+  document.getElementById("stMastered").textContent = mastered;
+  document.getElementById("stGraded").textContent = S.graded;
+  // 句式库
+  const groups = {};
+  S.sentences.forEach(s => (groups[s.pattern] = (groups[s.pattern]||0)+1));
+  const el = document.getElementById("patternList");
+  const keys = Object.keys(groups).sort((a,b)=>groups[b]-groups[a]);
+  el.innerHTML = keys.length ? keys.map(k =>
+    `<div class="pattern-item" onclick="filterPattern('${esc(k).replace(/'/g,"\\'")}')">${esc(k)}<span class="cnt">${groups[k]}</span></div>`).join("")
+    : `<div class="empty" style="padding:10px 0">练过的句式会归到这里</div>`;
+}
+function filterPattern(p){
+  // 跳到句式解剖页并列出该句式的句子
+  switchTab("p1");
+  const list = S.sentences.filter(s=>s.pattern===p);
+  document.getElementById("out1").innerHTML = `<div class="card"><h3>句式「${esc(p)}」· ${list.length} 句</h3>` +
+    list.map(s=>`<div class="sent-item"><div class="zh">${esc(s.zh)}</div><div class="en">${esc(s.en)}</div></div>`).join("") + `</div>`;
+}
+function renderErrorStats(){
+  const el = document.getElementById("out5");
+  const cats = S.drills.length || Object.keys(S.errors).length;
+  const entries = Object.entries(S.errors).sort((a,b)=>b[1]-a[1]);
+  const total = entries.reduce((a,[,n])=>a+n,0);
+  if(!total){
+    el.innerHTML = `<div class="empty">还没有批改记录。去「先写后看」写几句，错误会自动归类到这里。</div>`;
+    return;
+  }
+  el.innerHTML = `<div class="card"><h3>错误归因 · 共 ${total} 处</h3>` +
+    entries.map(([cat,n])=>`
+      <div class="weak-bar">
+        <div class="lbl"><span>${esc(cat)}</span><span>${n} 次 · ${Math.round(n/total*100)}%</span></div>
+        <div class="track"><div class="fill" style="width:${n/total*100}%"></div></div>
+      </div>`).join("") +
+    `<div class="hint" style="margin-top:10px">你最常栽在「${esc(entries[0][0])}」。用下方按钮生成针对性的陷阱练习。</div></div>`;
+}
+
+/* ==================== Tab 切换 ==================== */
+document.querySelectorAll(".tab").forEach(t=>{
+  t.onclick = () => switchTab(t.dataset.p);
+});
+function switchTab(id){
+  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active", x.dataset.p===id));
+  document.querySelectorAll(".panel").forEach(x=>x.classList.toggle("active", x.id===id));
+}
+
+/* ==================== 导出/导入 ==================== */
+document.getElementById("btnExport").onclick = ()=>{
+  const blob = new Blob([JSON.stringify(S,null,2)],{type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "en-sense-trainer-backup.json"; a.click();
+};
+document.getElementById("btnImport").onclick = ()=> document.getElementById("fileImport").click();
+document.getElementById("fileImport").onchange = e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{ try{
+      const d = JSON.parse(r.result);
+      if(!d.sentences) throw new Error("格式不对");
+      S = Object.assign({sentences:[], errors:{}, graded:0, drills:[]}, d);
+      save(); refreshSidebar(); renderErrorStats(); alert("导入成功");
+    }catch(err){ alert("导入失败: "+err.message); } };
+  r.readAsText(f);
+};
+
+/* ==================== 示例句 ==================== */
+const EXAMPLES = [
+  "我越想越觉得这个决定不对。",
+  "不是我忘了，是我根本没打算去。",
+  "他一到家就发现门开着。",
+  "与其在这等，不如我们先吃。",
+  "这是我来北京的第一年。",
+  "工作做完了我才回家。"
+];
+function renderExamples(elId, handler){
+  document.getElementById(elId).innerHTML = EXAMPLES.map(e=>`<span class="example-chip">${esc(e)}</span>`).join("");
+  document.querySelectorAll("#"+elId+" .example-chip").forEach(c=> c.onclick = ()=>handler(c.textContent));
+}
+
+/* ==================== 模块0：AI 跟写（增量翻译） ==================== */
+/* 策略：
+   - 按句切分（。！？!?…\n），完整句才"定稿"并缓存译文，之后不再重译
+   - 句尾的半成品：出现停顿信号（逗号/分号，或长度≥6字）才临时翻译一次，且只在内容变化时重译
+   - 用户改动前文 → 从分歧处作废缓存，只重译受影响部分 */
+const SYS_GHOST_SENT = `你是即时翻译引擎。把用户的完整中文句子译成自然英文。只输出这句的英文，不要解释、不要引号。上下文仅供理解，绝对不要翻译或复述上下文。`;
+const SYS_GHOST_TAIL = `你是即时翻译引擎。用户正在写一个未写完的中文句子，把已有内容顺滑地译成英文（不完整的部分也照译）。只输出英文本身，不要解释、不要引号。上下文仅供理解，绝对不要翻译或复述上下文。`;
+
+let m0 = { committed:[], ctrl:null, timer:null, tailZh:"", tailEn:"", tailBusy:false };
+const m0Dissected = new Set(); // 已自动解剖过的句子，避免重复
+async function m0AutoDissect(zh){
+  if(!zh || m0Dissected.has(zh)) return;
+  m0Dissected.add(zh);
+  const box = document.getElementById("dissect0");
+  const wrap = document.createElement("div");
+  wrap.innerHTML = `<div class="hint" style="margin:4px 0 2px">📝 原句：${esc(zh)}</div><div class="dslot loading"><div class="spinner"></div>句式解剖中…</div>`;
+  box.prepend(wrap);
+  const slot = wrap.querySelector(".dslot");
+  try{
+    const cached = S.sentences.find(s => s.zh === zh && s.segments?.length);
+    if(cached){
+      slot.outerHTML = dissectCardHTML(cached);
+    }else{
+      const d = await callLLM(SYS_DISSECT, zh);
+      addToLibrary(d, zh);
+      slot.outerHTML = dissectCardHTML(d);
+    }
+  }catch(e){
+    slot.outerHTML = `<div class="error-msg">⚠ ${esc(e.message||String(e))}</div>`;
+    m0Dissected.delete(zh); // 失败允许重试
+  }
+}
+const m0Els = () => ({ zh:document.getElementById("inZh0"), live:document.getElementById("liveEn"),
+                       st:document.getElementById("st0"), card:document.getElementById("liveCard") });
+
+function m0Split(text){
+  // 返回 {sentences:[完整句], tail:半成品}
+  const parts = text.split(/([。！？!?…]+|\n+)/).filter(x=>x!=="");
+  const sentences = []; let tail = "";
+  for(let i=0;i<parts.length;i++){
+    const p = parts[i];
+    if(/^[。！？!?…\n]+$/.test(p)){
+      if(sentences.length) sentences[sentences.length-1] += p;
+      else tail += p; // 开头就是标点，归入 tail
+    }else{
+      if(tail){ sentences.push(tail); tail = ""; }
+      if(i+1 < parts.length && /^[。！？!?…\n]+$/.test(parts[i+1])) sentences.push(p);
+      else tail = p;
+    }
+  }
+  return {sentences, tail};
+}
+function m0Render(streaming){
+  const {live, card} = m0Els();
+  card.style.display = "";
+  const committedEn = m0.committed.map(c=>c.en).filter(Boolean).join(" ");
+  const tailHtml = m0.tailZh
+    ? `<span${streaming?' class="cursor-blink"':''}>${esc(m0.tailEn||"")}</span>` : "";
+  live.innerHTML = esc(committedEn) + (committedEn && tailHtml ? " " : "") + tailHtml;
+}
+function m0Diverge(sentences){
+  // 从第一个不一致的位置截断缓存
+  let i = 0;
+  while(i < sentences.length && i < m0.committed.length && m0.committed[i].zh === sentences[i]) i++;
+  if(i < m0.committed.length) m0.committed = m0.committed.slice(0, i);
+  return i; // i 起是"新句"
+}
+async function m0Run(){
+  const {zh, st} = m0Els();
+  const text = zh.value.trim();
+  if(!text){
+    if(m0.ctrl) m0.ctrl.abort();
+    m0 = {committed:[], ctrl:null, timer:null, tailZh:"", tailEn:"", tailBusy:false};
+    m0Els().card.style.display = "none"; st.textContent = "";
+    return;
+  }
+  const {sentences, tail} = m0Split(text);
+  const startIdx = m0Diverge(sentences);
+  st.textContent = "跟写中…";
+
+  // 1) 翻译新增的完整句（定稿，缓存）
+  if(startIdx < sentences.length){
+    if(m0.ctrl) m0.ctrl.abort();
+    m0.ctrl = new AbortController();
+    for(let i=startIdx; i<sentences.length; i++){
+      const s = {zh: sentences[i], en: ""};
+      m0.committed[i] = s;
+      const ctx = m0.committed.slice(Math.max(0,i-2), i).map(c=>c.zh).join(" ");
+      try{
+        s.en = await streamLLM(SYS_GHOST_SENT, (ctx?"上文："+ctx+"\n":"")+"翻译这句："+s.zh,
+          (delta, full)=>{ s.en = full; m0Render(false); }, m0.ctrl.signal);
+      }catch(e){
+        if(e.name === "AbortError") return;
+        s.en = ""; m0Els().live.innerHTML = `<span style="color:var(--err);font-size:14px">⚠ ${esc(e.message||String(e))}</span>`;
+        st.textContent = ""; return;
+      }
+    }
+    // 定稿句自动做句式解剖
+    for(let i=startIdx; i<sentences.length; i++) m0AutoDissect(sentences[i]);
+  }
+
+  // 2) 半成品尾句：有"停顿信号"才译（含逗号/分号，或≥6字），内容没变就复用
+  const worthTail = tail && (/[，、；,;]/.test(tail) || tail.length >= 6);
+  if(worthTail && tail !== m0.tailZh){
+    if(m0.ctrl) m0.ctrl.abort();
+    m0.ctrl = new AbortController();
+    m0.tailZh = tail; m0.tailEn = "";
+    const ctx = m0.committed.slice(-2).map(c=>c.zh).join(" ");
+    try{
+      m0.tailEn = await streamLLM(SYS_GHOST_TAIL, (ctx?"上文："+ctx+"\n":"")+"未完成句："+tail,
+        (delta, full)=>{ m0.tailEn = full; m0Render(true); }, m0.ctrl.signal);
+      m0Render(false);
+    }catch(e){
+      if(e.name === "AbortError") return;
+      m0Els().live.innerHTML = `<span style="color:var(--err);font-size:14px">⚠ ${esc(e.message||String(e))}</span>`;
+      st.textContent = ""; return;
+    }
+  }else if(!worthTail && m0.tailZh){
+    m0.tailZh = ""; m0.tailEn = ""; m0Render(false); // 太短的碎片不译，清掉旧尾句
+  }
+  st.textContent = "已跟上 ✓（写完一句按 。！？ 定稿，改过的句子不会重译）";
+  m0Render(false);
+}
+document.getElementById("inZh0").addEventListener("input", ()=>{
+  clearTimeout(m0.timer);
+  m0.timer = setTimeout(m0Run, 800); // 停顿 800ms 才触发，且增量只译新内容
+  // 长停顿兜底：没打句号但停了 3 秒，且尾句够长 → 视为语义完整，也自动解剖
+  clearTimeout(m0.idleTimer);
+  m0.idleTimer = setTimeout(()=>{
+    const text = document.getElementById("inZh0").value.trim();
+    if(!text) return;
+    const {tail} = m0Split(text);
+    if(tail && tail === m0.tailZh && tail.length >= 6) m0AutoDissect(tail);
+  }, 3000);
+});
+document.getElementById("clear0").onclick = ()=>{
+  document.getElementById("inZh0").value = "";
+  if(m0.ctrl) m0.ctrl.abort();
+  clearTimeout(m0.idleTimer);
+  m0 = {committed:[], ctrl:null, timer:null, tailZh:"", tailEn:"", tailBusy:false};
+  m0Dissected.clear();
+  document.getElementById("dissect0").innerHTML = "";
+  document.getElementById("liveCard").style.display = "none";
+  document.getElementById("st0").textContent = "";
+};
+document.getElementById("send0").onclick = ()=>{
+  const zh = document.getElementById("inZh0").value.trim();
+  if(!zh) return;
+  switchTab("p1");
+  document.getElementById("inZh1").value = zh;
+  dissect(zh, document.getElementById("out1"));
+};
+
+/* ==================== 模块1：句式解剖 ==================== */
+const SYS_DISSECT = `你是英语语感教练。把用户的中文句子翻译成英文并做句式解剖。严格返回 JSON：
+{
+  "pattern": "核心句式名（中文，6-12字，如：越…越…比较句）",
+  "patternNote": "一句话讲中英思维差异，重点讲英文的组装顺序/结构选择和中文有何不同，50字内",
+  "segments": [{"en":"英文片段（按句子自然顺序切分，2-5词一段，只含主句内容）","zh":"该片段的中文对照（简短）","role":"语法角色：主语/谓语/宾语/状语/定语/补语/助动词/从句引导词/连接词"}],
+  "chunks": [{"zh":"中文块","en":"对应英文块","role":"语法角色"}],
+  "translation": "完整参考译文",
+  "alternative": "更地道/口语化的另一种英文说法",
+  "tips": ["1-3条避坑提示，优先指出中文母语者在这类句式上的典型中式错误"]
+}
+要求：segments 覆盖整句英文、顺序拼接即完整句子；chunks 按英文语序排列并可以包含从句内部的细分（这是详细版拆解）；只返回 JSON。`;
+
+/* 角色 → 颜色索引 */
+const ROLE_COLORS = [["主语","0"],["谓语","1"],["宾语","2"],["状语","3"],["定语","4"],["补语","4"],["助动词","1"],["从句","5"],["引导词","5"],["连接词","5"],["连词","5"]];
+function roleColor(role){
+  const r = role||"";
+  for(const [k,c] of ROLE_COLORS) if(r.includes(k)) return c;
+  return "5";
+}
+function renderSegments(segments){
+  if(!segments?.length) return "";
+  const legend = [["主语","#5b8cff"],["谓语/助动词","#b06ce0"],["宾语","#3fb9a0"],["状语","#e08c4c"],["定语/补语","#d05c9c"],["从句/连接","#6cb0e0"]];
+  return `
+    <div class="role-legend">${legend.map(([n,c])=>`<span><span class="dot" style="background:${c}"></span>${n}</span>`).join("")}</div>
+    <div class="anno-sentence">${segments.map(sg=>`
+      <span class="seg r-${roleColor(sg.role)}">
+        <span class="gloss">${esc(sg.zh||"")}</span>
+        <span class="txt">${esc(sg.en)}</span>
+      </span>`).join("")}</div>`;
+}
+
+function dissectCardHTML(d){
+  return `
+    <div class="card">
+      <div class="pattern-tag">📋 ${esc(d.pattern)}</div>
+      ${renderSegments(d.segments)}
+      <details class="breakdown">
+        <summary>▸ 展开逐项拆解、思维差异与提示</summary>
+        <div class="pattern-note">🧠 ${esc(d.patternNote)}</div>
+        ${renderChunks(d.chunks)}
+        <div class="divider"></div>
+        ${d.alternative ? `<div class="alt-line"><b>更地道：</b>${esc(d.alternative)}</div>`:""}
+        ${d.tips?.length ? `<ul class="tip-list">${d.tips.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>`:""}
+      </details>
+    </div>`;
+}
+async function dissect(zh, outEl){
+  loading(outEl, "正在解剖句式…");
+  try{
+    const d = await callLLM(SYS_DISSECT, zh);
+    addToLibrary(d, zh);
+    outEl.innerHTML = dissectCardHTML(d) + `<div class="hint" style="margin-top:10px">✅ 已存入句式库，可去「渐进挖空」练这句。</div>`;
+  }catch(e){ errBox(outEl, e); }
+}
+document.getElementById("go1").onclick = ()=>{
+  const zh = document.getElementById("inZh1").value.trim();
+  if(zh) dissect(zh, document.getElementById("out1"));
+};
+document.getElementById("inZh1").addEventListener("keydown", e=>{
+  if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); document.getElementById("go1").click(); }
+});
+renderExamples("ex1", t=>{ document.getElementById("inZh1").value = t; document.getElementById("go1").click(); });
+
+/* ==================== 模块2：先写后看 ==================== */
+let m2zh = "";
+document.getElementById("step2a").onclick = async ()=>{
+  const zh = document.getElementById("inZh2").value.trim();
+  if(!zh) return;
+  m2zh = zh;
+  document.getElementById("writeBox2").style.display = "";
+  document.getElementById("writeBox2").scrollIntoView({behavior:"smooth"});
+};
+document.getElementById("step2b").onclick = async ()=>{
+  const userEn = document.getElementById("inEn2").value.trim();
+  const out = document.getElementById("out2");
+  if(!m2zh || !userEn) return;
+  loading(out, "教练正在逐块批改…");
+  try{
+    // 先拿参考解析（可能已入库）
+    let base = S.sentences.find(s=>s.zh===m2zh);
+    if(!base){ const d = await callLLM(SYS_DISSECT, m2zh); base = addToLibrary(d, m2zh); }
+    const SYS_GRADE = `你是英语语感教练。用户根据中文写了自己的英文版本，参考译文已给出。逐块对照批改，把每个问题归因到中文母语者的思维习惯。严格返回 JSON：
+{
+  "overall": "good|mid|bad",
+  "corrections": [{"part":"用户原文片段","mark":"good|warn|err","better":"更好的写法（好则为空）","why":"问题出在哪个思维习惯，中文怎么解释","cat":"错误类别，从这些里选：缺主语/时态无意识/流水句堆砌/名词单复数/冠词/介词直译/被动回避/句式选择/用词不地道/无错误"}],
+  "praise": "一句具体表扬（哪块写得地道）",
+  "suggestion": "一句针对性改进建议"
+}
+只批改有问题或亮点的块，不要逐词罗列；只返回 JSON。`;
+    const g = await callLLM(SYS_GRADE,
+      `中文原句：${m2zh}\n参考译文：${base.en}\n用户版本：${userEn}`);
+    S.graded++; save(); refreshSidebar();
+    // 错误归类统计
+    (g.corrections||[]).forEach(c=>{ if(c.mark!=="good" && c.cat && c.cat!=="无错误"){ S.errors[c.cat]=(S.errors[c.cat]||0)+1; }});
+    save(); renderErrorStats();
+    const markTxt = {good:"✅", warn:"⚠️", err:"❌"};
+    const cls = {good:"good", warn:"warn", err:"err"};
+    out.innerHTML = `
+      <div class="card">
+        <div class="verdict ${cls[g.overall]||"mid"}">${g.overall==="good"?"🎉 结构掌握得不错":g.overall==="bad"?"💪 结构还需打磨":"👍 接近了，差一点点"}</div>
+        <div class="two-col">
+          <div><div class="lbl">你的版本</div>${esc(userEn)}</div>
+          <div><div class="lbl">参考译文</div>${esc(base.en)}</div>
+        </div>
+        ${(g.corrections||[]).map(c=>`
+          <div class="corr ${cls[c.mark]||"warn"}">
+            <span class="mark">${markTxt[c.mark]||"⚠️"}</span>
+            <div><b>${esc(c.part)}</b>${c.better?` → <b style="color:var(--accent)">${esc(c.better)}</b>`:""}
+              <span class="why">${esc(c.why||"")}</span>
+              ${c.mark!=="good"&&c.cat&&c.cat!=="无错误"?`<span class="err-cat">${esc(c.cat)}</span>`:""}
+            </div>
+          </div>`).join("")}
+        ${g.praise?`<div class="alt-line" style="margin-top:10px"><b>👍 亮点：</b>${esc(g.praise)}</div>`:""}
+        ${g.suggestion?`<div class="alt-line"><b>📈 建议：</b>${esc(g.suggestion)}</div>`:""}
+      </div>`;
+  }catch(e){ errBox(out, e); }
+};
+
+/* ==================== 模块3：渐进挖空 ==================== */
+let m3sent = null;
+document.getElementById("btn3new").onclick = async ()=>{
+  const pool = S.sentences;
+  const out = document.getElementById("out3");
+  if(!pool.length){ out.innerHTML = `<div class="empty">先在「句式解剖」或「先写后看」里练几个句子，它们会进入这里的题库。</div>`; return; }
+  // 优先未通 C 层的，其次到期
+  m3sent = pool.filter(s=>(s.level||0)<2).sort((a,b)=>(a.due||"").localeCompare(b.due||""))[0]
+           || pool[Math.floor(Math.random()*pool.length)];
+  const level = m3sent.level || 0;
+  document.getElementById("p3poolInfo").textContent = `题库 ${pool.length} 句 · 当前：${m3sent.pattern}`;
+  await renderCloze(m3sent, level, out);
+};
+async function renderCloze(sent, level, out){
+  const lvNames = ["A · 填空（只填结构词）","B · 骨架首字母","C · 裸句默写"];
+  const lvCls = ["lv-a","lv-b","lv-c"];
+  const dots = [0,1,2].map(i=>`<div class="level-dot ${i<level?"done":i===level?"cur":""}">${["A","B","C"][i]}</div>`).join("<span>→</span>");
+  loading(out, "正在生成题目…");
+  try{
+    const SYS_CLOZE = `你是英语语感教练。基于给定英文句子生成挖空练习，严格返回 JSON：
+{"blanks":[{"answer":"挖掉的词或短语","hint":${level===0?'"中文提示或语法角色"':'"该词首字母+下划线长度，如 t____"'}}],"note":"一句话说明这些空为什么是句式的骨架"}
+规则：挖掉的必须是句式结构词/骨架词（连词、比较结构、从句引导词、助动词、介词、It/there 等），不要挖实义动词和名词；数量 2-5 个。只返回 JSON。`;
+    const d = await callLLM(SYS_CLOZE, `英文句子：${sent.en}\n中文：${sent.zh}\n难度层级：${level}`);
+    const blankMap = {};
+    let sentenceHtml = esc(sent.en);
+    d.blanks.forEach((b,i)=>{
+      const re = new RegExp(b.answer.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"), "i");
+      blankMap[i] = b.answer;
+      sentenceHtml = sentenceHtml.replace(re,
+        `<input class="blank" data-i="${i}" data-ans="${esc(b.answer)}" autocomplete="off">`);
+    });
+    // level 2 (C) 直接显示中文让用户默写
+    out.innerHTML = `
+      <div class="card">
+        <div class="level-progress">${dots}<span style="margin-left:8px">${lvNames[level]} <span class="level-badge ${lvCls[level]}">Level ${["A","B","C"][level]}</span></span></div>
+        ${level<2 ? `
+          <div class="cloze-sentence">${sentenceHtml}</div>
+          <div class="hint" style="margin-bottom:10px">${esc(d.note||"")}</div>
+          <div class="row"><button class="btn" id="clozeCheck">检查</button><span class="hint">用词不同没关系，结构对了就算过</span></div>
+          <div id="clozeResult"></div>`
+        : `
+          <div class="input-card" style="margin:0 0 10px">
+            <div style="font-size:17px; margin-bottom:8px">${esc(sent.zh)}</div>
+            <textarea id="clozeC" placeholder="只凭中文，默写整句英文…"></textarea>
+          </div>
+          <button class="btn" id="clozeCheckC">提交默写</button>
+          <div id="clozeResult"></div>`}
+      </div>`;
+    if(level<2){
+      document.getElementById("clozeCheck").onclick = ()=>gradeCloze(sent, level, out);
+    }else{
+      document.getElementById("clozeCheckC").onclick = async ()=>{
+        const v = document.getElementById("clozeC").value.trim();
+        if(!v) return;
+        const res = document.getElementById("clozeResult");
+        loading(res,"判定中…");
+        try{
+          const j = await callLLM(`你是英语语感教练。判断用户的英文默写是否掌握了原句的句式结构（骨架词/从句结构正确即算通过，实义词不同不算错）。严格返回 JSON：{"pass":true/false,"diff":"与原句的结构差异，一句话","original":"原句"}`,
+            `原句：${sent.en}\n用户默写：${v}`);
+          srsUpdate(sent, j.pass);
+          res.innerHTML = `<div class="verdict ${j.pass?"good":"bad"}">${j.pass?"✅ 句式结构通过！已计入复习计划":"❌ 结构还没对"}</div>
+            <div class="alt-line"><b>原句：</b>${esc(sent.en)}</div><div class="alt-line"><b>差异：</b>${esc(j.diff||"")}</div>`;
+          refreshSidebar();
+        }catch(e){ errBox(res,e); }
+      };
+    }
+  }catch(e){ errBox(out,e); }
+}
+async function gradeCloze(sent, level, out){
+  const inputs = [...document.querySelectorAll(".blank")];
+  const res = document.getElementById("clozeResult");
+  let allOk = true;
+  inputs.forEach(inp=>{
+    const ans = inp.dataset.ans;
+    const norm = s=>s.trim().toLowerCase().replace(/[.,!?]/g,"");
+    const ok = norm(inp.value) && norm(ans).split(/[\s/]/).some(a=>a===norm(inp.value));
+    inp.classList.toggle("ok", ok); inp.classList.toggle("err", !ok);
+    if(!ok) allOk = false;
+  });
+  if(allOk){
+    sent.level = Math.max(sent.level||0, level+1); save();
+    res.innerHTML = `<div class="verdict good">✅ Level ${["A","B","C"][level]} 通过！${level<2?`拐杖撤一层，进入 Level ${["B","C"][level]}…`:"已可裸写，转入复习计划"}</div>`;
+    setTimeout(()=>renderCloze(sent, level+1, out), 900);
+  }else{
+    res.innerHTML = `<div class="verdict bad">有填错的地方（红色），想想这个位置为什么必须是这个词。</div>`;
+  }
+}
+
+/* ==================== 模块4：回译 ==================== */
+document.getElementById("btn4new").onclick = async ()=>{
+  const out = document.getElementById("out4");
+  if(!S.sentences.length){ return; }
+  const sent = S.sentences[Math.floor(Math.random()*S.sentences.length)];
+  loading(out, "正在把译文变回自然的中文…");
+  try{
+    const d = await callLLM(`你是翻译教练。把英文句子翻译成完全自然、地道、符合中文习惯的中文（可以和直译差别很大，但要保留全部信息）。这个中文之后会被用户重新译回英文。严格返回 JSON：{"zh":"自然中文化后的句子"}`,
+      sent.en);
+    const backZh = d.zh;
+    out.innerHTML = `
+      <div class="card">
+        <h3>🔁 回译循环</h3>
+        <div class="input-card" style="margin-bottom:10px">
+          <div class="hint" style="margin-bottom:6px">这句中文是从英文"变"回来的。请把它重新译成英文：</div>
+          <div style="font-size:17px">${esc(backZh)}</div>
+        </div>
+        <textarea id="btEn" placeholder="Write your English..."></textarea>
+        <div class="row" style="margin-top:10px"><button class="btn" id="btGo">提交比对</button></div>
+        <div id="btResult"></div>
+      </div>`;
+    document.getElementById("btGo").onclick = async ()=>{
+      const v = document.getElementById("btEn").value.trim();
+      const r = document.getElementById("btResult");
+      if(!v) return;
+      loading(r, "比对中…");
+      try{
+        const j = await callLLM(`你是英语语感教练。原英文句和用户的回译版本如下。找出结构上不一致的地方（这些就是语感薄弱点）。严格返回 JSON：{"match":true/false,"diffs":["结构差异点，每条一句话"],"verdict":"一句话总评"}`,
+          `原句：${sent.en}\n用户回译：${v}`);
+        if(!j.match){ sent.weak = true; save(); }
+        r.innerHTML = `
+          <div class="verdict ${j.match?"good":"mid"}">${j.match?"✅ 结构一致，这句你真掌握了":"🔍 找到薄弱点了"}</div>
+          <div class="two-col"><div><div class="lbl">你的回译</div>${esc(v)}</div><div><div class="lbl">原始英文</div>${esc(sent.en)}</div></div>
+          ${(j.diffs||[]).map(x=>`<div class="corr warn"><span class="mark">🔍</span><div>${esc(x)}</div></div>`).join("")}
+          <div class="alt-line"><b>总评：</b>${esc(j.verdict||"")}</div>
+          ${j.match?"":"<div class='hint'>已标记为薄弱句式，复习时会优先出现。</div>"}`;
+      }catch(e){ errBox(r,e); }
+    };
+  }catch(e){ errBox(out,e); }
+};
+
+/* ==================== 模块5：弱点画像 ==================== */
+renderErrorStats();
+document.getElementById("btn5drill").onclick = async ()=>{
+  const out = document.getElementById("out5d");
+  const entries = Object.entries(S.errors).sort((a,b)=>b[1]-a[1]);
+  if(!entries.length){ out.innerHTML = `<div class="empty">还没有错误记录，先去写几句。</div>`; return; }
+  const top = entries.slice(0,2).map(e=>e[0]).join("、");
+  loading(out, "针对「"+top+"」生成陷阱句…");
+  try{
+    const d = await callLLM(`你是英语语感教练。针对用户最弱的思维弱点（${top}），生成 3 个中文句子作为翻译陷阱——这些句子直译就会犯对应错误，必须用正确的英文思维处理。严格返回 JSON：
+{"drills":[{"zh":"中文句子（15字内，日常场景）","trap":"直译会怎么错","hint":"不直接给答案的提示"}]}`,
+      "生成练习");
+    out.innerHTML = `<div class="card"><h3>🎯 靶向练习 · ${esc(top)}</h3>` +
+      d.drills.map((x,i)=>`
+        <div class="sent-item">
+          <div style="font-size:16px">${i+1}. ${esc(x.zh)}</div>
+          <div class="meta"><button class="btn ghost small" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">看提示</button>
+          <div style="display:none" class="hint">💡 ${esc(x.hint)}<br>⚠️ 直译陷阱：${esc(x.trap)}</div></div>
+        </div>`).join("") +
+      `<div class="hint">心里译完之后，把句子贴到「先写后看」里写出来并批改。</div></div>`;
+  }catch(e){ errBox(out,e); }
+};
+
+/* ==================== 模块6：场景造句 ==================== */
+const SCENE_EX = ["委婉拒绝同事的加班请求","跟朋友吐槽今天堵车","向老板汇报项目延期","安慰考试失利的朋友","在餐厅投诉上菜太慢"];
+document.getElementById("ex6").innerHTML = SCENE_EX.map(e=>`<span class="example-chip">${esc(e)}</span>`).join("");
+document.querySelectorAll("#ex6 .example-chip").forEach(c=> c.onclick = ()=>{ document.getElementById("inScene").value = c.textContent; });
+let m6options = [], m6picked = -1;
+document.getElementById("go6").onclick = async ()=>{
+  const scene = document.getElementById("inScene").value.trim();
+  const out = document.getElementById("out6");
+  if(!scene) return;
+  loading(out, "教练正在准备句式选项…");
+  try{
+    const d = await callLLM(`你是英语语感教练。用户给一个日常表达场景，你提供 3 种不同句式骨架选项（由易到地道），让用户挑一种自己造句。严格返回 JSON：
+{"options":[{"pattern":"句式骨架，如 I was wondering if...","tone":"语气/场合说明","example":"用别的例句演示该句式（不是本场景的答案）"}]}`,
+      `场景：${scene}`);
+    m6options = d.options || [];
+    out.innerHTML = `<div class="card"><h3>三种句式，挑一个你自己造</h3>` +
+      m6options.map((o,i)=>`
+        <div class="scene-option" data-i="${i}">
+          <div class="pat">${i+1}. ${esc(o.pattern)}</div>
+          <div class="ex">${esc(o.tone||"")}</div>
+          <div class="hint">例：${esc(o.example||"")}</div>
+        </div>`).join("") + `
+      <div class="divider"></div>
+      <textarea id="m6en" placeholder="用你挑的句式，为这个场景写出英文（可以写多句）"></textarea>
+      <div class="row" style="margin-top:10px"><button class="btn" id="m6go">提交批改</button></div>
+      <div id="m6result"></div>
+    </div>`;
+    document.querySelectorAll(".scene-option").forEach(el=>{
+      el.onclick = ()=>{
+        document.querySelectorAll(".scene-option").forEach(x=>x.classList.remove("picked"));
+        el.classList.add("picked"); m6picked = +el.dataset.i;
+      };
+    });
+    document.getElementById("m6go").onclick = async ()=>{
+      const v = document.getElementById("m6en").value.trim();
+      const r = document.getElementById("m6result");
+      if(!v || m6picked<0){ r.innerHTML = `<div class="error-msg">先挑一个句式选项，并写出你的句子。</div>`; return; }
+      loading(r,"批改中…");
+      try{
+        const picked = m6options[m6picked];
+        const j = await callLLM(`你是英语语感教练。用户在场景中选用指定句式造句，请批改：语气是否得体、句式用得对不对、有无中式思维问题。严格返回 JSON：
+{"score":"good|mid|bad","issues":[{"part":"片段","why":"问题及思维归因","better":"改进"}],"polish":"教练自己写的地道版本","note":"一句鼓励或建议"}`,
+          `场景：${scene}\n用户选的句式：${picked.pattern}\n用户造句：${v}`);
+        const cls={good:"good",mid:"mid",bad:"bad"}, mk={good:"🎉",mid:"👍",bad:"💪"};
+        r.innerHTML = `<div class="verdict ${cls[j.score]}">${mk[j.score]} ${esc(j.note||"")}</div>
+          ${(j.issues||[]).map(x=>`<div class="corr warn"><span class="mark">⚠️</span><div><b>${esc(x.part)}</b> → <b style="color:var(--accent)">${esc(x.better||"")}</b><span class="why">${esc(x.why)}</span></div></div>`).join("")}
+          <div class="trans-final" style="margin-top:8px"><b>教练版：</b>${esc(j.polish)}</div>`;
+      }catch(e){ errBox(r,e); }
+    };
+  }catch(e){ errBox(out,e); }
+};
+
+/* ==================== 复习弹窗 ==================== */
+const dlgReview = document.getElementById("dlgReview");
+document.getElementById("btnReview").onclick = ()=>{
+  const due = S.sentences.filter(isDue);
+  const body = document.getElementById("reviewBody");
+  if(!due.length){ body.innerHTML = `<div class="empty">今天没有到期的句子 🎉<br><span class="hint">新句子默写通过后 1 天、3 天、7 天…会回来找你。</span></div>`; }
+  else{
+    const s = due[0];
+    body.innerHTML = `
+      <div class="hint">凭中文默写英文（剩 ${due.length} 句）</div>
+      <div style="font-size:17px; margin:8px 0">${esc(s.zh)}</div>
+      <textarea id="rvEn" style="min-height:56px" placeholder="Write from memory..."></textarea>
+      <div class="row" style="margin-top:10px; justify-content:flex-end">
+        <button class="btn ghost" id="rvSkip">想不起来，看答案</button>
+        <button class="btn" id="rvOk">提交</button>
+      </div>
+      <div id="rvResult"></div>`;
+    const finish = pass=>{
+      const r = document.getElementById("rvResult");
+      srsUpdate(s, pass);
+      r.innerHTML = `<div class="verdict ${pass?"good":"bad"}">${pass?"✅ 间隔已延长":"🔄 明天再来一次"}</div>
+        <div class="two-col"><div><div class="lbl">你的答案</div>${esc(document.getElementById("rvEn").value||"—")}</div><div><div class="lbl">参考</div>${esc(s.en)}</div></div>
+        <div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn" id="rvNext">下一句</button></div>`;
+      document.getElementById("rvNext").onclick = ()=> document.getElementById("btnReview").onclick();
+      refreshSidebar();
+    };
+    document.getElementById("rvOk").onclick = ()=>finish(true);
+    document.getElementById("rvSkip").onclick = ()=>finish(false);
+  }
+  dlgReview.showModal();
+};
+
+/* ==================== 登录/注册 ==================== */
+const dlgAuth = document.getElementById("dlgAuth");
+function showLogin(msg){
+  document.getElementById("authErr").style.display = msg ? "" : "none";
+  if(msg) document.getElementById("authErr").textContent = msg;
+  if(!dlgAuth.open) dlgAuth.showModal();
+}
+async function doAuth(mode){
+  const u = document.getElementById("authUser").value.trim();
+  const p = document.getElementById("authPass").value;
+  const err = document.getElementById("authErr");
+  err.style.display = "none";
+  try{
+    const r = await fetch("api/"+mode, {method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({user:u, pass:p})});
+    const j = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(j.error || ("错误 "+r.status));
+    localStorage.setItem(TOKEN_KEY, j.token);
+    dlgAuth.close();
+    const ok = await loadRemote();
+    if(ok){
+      refreshSidebar(); renderErrorStats();
+      document.getElementById("curUser").textContent = "👤 " + j.user;
+    }
+  }catch(e){ err.style.display = ""; err.textContent = e.message; }
+}
+document.getElementById("authLogin").onclick = ()=>doAuth("login");
+document.getElementById("authReg").onclick = ()=>doAuth("register");
+document.getElementById("authPass").addEventListener("keydown", e=>{ if(e.key==="Enter") doAuth("login"); });
+document.getElementById("btnLogout").onclick = ()=>{
+  localStorage.removeItem(TOKEN_KEY);
+  location.reload();
+};
+
+/* ==================== 初始化 ==================== */
+(async function init(){
+  const ok = await loadRemote();
+  if(ok){
+    try{
+      const t = localStorage.getItem(TOKEN_KEY);
+      const r = await fetch("api/me", {headers:{"Authorization":"Bearer "+t}});
+      if(r.ok){ document.getElementById("curUser").textContent = "👤 " + (await r.json()).user; }
+    }catch(e){}
+    refreshSidebar(); renderErrorStats();
+  }
+})();
+</script>
+</body>
+</html>
